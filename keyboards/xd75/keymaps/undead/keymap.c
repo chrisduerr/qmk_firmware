@@ -20,7 +20,7 @@
 #define _FN 1
 
 // NOOP
-#define _____ KC_NO
+#define _____ KC_TRNS
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -39,10 +39,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
  [_QW] = { /* DVORAK */
-  { KC_PSCREEN, KC_1,    KC_2,    KC_3,   KC_4,    KC_5,   _____,   KC_PGUP,   _____,   KC_6,   KC_7,    KC_8,   KC_9,    KC_0,    KC_DEL   },
-  { KC_TAB,     KC_QUOT, KC_COMM, KC_DOT, KC_P,    KC_Y,   _____,   KC_PGDOWN, _____,   KC_F,   KC_G,    KC_C,   KC_R,    KC_L,    KC_GRAVE },
-  { KC_BSPC,    KC_A,    KC_O,    KC_E,   KC_U,    KC_I,   _____,   _____,     _____,   KC_D,   KC_H,    KC_T,   KC_N,    KC_S,    KC_ENT   },
-  { KC_LSFT,    KC_SCLN, KC_Q,    KC_J,   KC_K,    KC_X,   _____,   KC_UP,     _____,   KC_B,   KC_M,    KC_W,   KC_V,    KC_Z,    KC_RSFT  },
+  { KC_PSCREEN, KC_1,    KC_2,    KC_3,   KC_4,    KC_5,   KC_NO,   KC_PGUP,   KC_NO,   KC_6,   KC_7,    KC_8,   KC_9,    KC_0,    KC_DEL   },
+  { KC_TAB,     KC_QUOT, KC_COMM, KC_DOT, KC_P,    KC_Y,   KC_NO,   KC_PGDOWN, KC_NO,   KC_F,   KC_G,    KC_C,   KC_R,    KC_L,    KC_GRAVE },
+  { KC_BSPC,    KC_A,    KC_O,    KC_E,   KC_U,    KC_I,   KC_NO,   KC_NO,     KC_NO,   KC_D,   KC_H,    KC_T,   KC_N,    KC_S,    KC_ENT   },
+  { KC_LSFT,    KC_SCLN, KC_Q,    KC_J,   KC_K,    KC_X,   KC_NO,   KC_UP,     KC_NO,   KC_B,   KC_M,    KC_W,   KC_V,    KC_Z,    KC_RSFT  },
   { KC_LCTL,    KC_LGUI, KC_LALT, KC_ESC, MO(_FN), KC_SPC, KC_LEFT, KC_DOWN,   KC_RGHT, KC_SPC, MO(_FN), KC_ESC, KC_RALT, KC_RGUI, KC_RCTL  },
  },
 
