@@ -20,13 +20,14 @@
 #define _FN 1
 
 // NOOP
+#define ____ KC_NO
 #define _____ KC_TRNS
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* DVORAK
  * .--------------------------------------------------------------------------------------------------------------------------------------.
- * | PR SCR | 1      | 2      | 3      | 4      | 5      |        | PR UP  |        | 6      | 7      | 8      | 9      | 0      | DEL    |
+ * | PR SCR |        |        |        |        |        |        | PR UP  |        |        |        |        |        |        | DEL    |
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+-----------------|
  * | TAB    | '      | ,      | .      | P      | Y      |        | PG DWN |        | F      | G      | C      | R      | L      | `      |
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+-----------------+--------|
@@ -39,10 +40,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
  [_QW] = { /* DVORAK */
-  { KC_PSCREEN, KC_1,    KC_2,    KC_3,   KC_4,    KC_5,   KC_NO,   KC_PGUP,   KC_NO,   KC_6,   KC_7,    KC_8,   KC_9,    KC_0,    KC_DEL   },
-  { KC_TAB,     KC_QUOT, KC_COMM, KC_DOT, KC_P,    KC_Y,   KC_NO,   KC_PGDOWN, KC_NO,   KC_F,   KC_G,    KC_C,   KC_R,    KC_L,    KC_GRAVE },
-  { KC_BSPC,    KC_A,    KC_O,    KC_E,   KC_U,    KC_I,   KC_NO,   KC_NO,     KC_NO,   KC_D,   KC_H,    KC_T,   KC_N,    KC_S,    KC_ENT   },
-  { KC_LSFT,    KC_SCLN, KC_Q,    KC_J,   KC_K,    KC_X,   KC_NO,   KC_UP,     KC_NO,   KC_B,   KC_M,    KC_W,   KC_V,    KC_Z,    KC_RSFT  },
+  { KC_PSCREEN, ____,    ____,    ____,   ____,    ____,   ____,    KC_PGUP,   ____,    ____,   ____,    ____,   ____,    ____,    KC_DEL   },
+  { KC_TAB,     KC_QUOT, KC_COMM, KC_DOT, KC_P,    KC_Y,   ____,    KC_PGDOWN, ____,    KC_F,   KC_G,    KC_C,   KC_R,    KC_L,    KC_GRAVE },
+  { KC_BSPC,    KC_A,    KC_O,    KC_E,   KC_U,    KC_I,   ____,    ____,      ____,    KC_D,   KC_H,    KC_T,   KC_N,    KC_S,    KC_ENT   },
+  { KC_LSFT,    KC_SCLN, KC_Q,    KC_J,   KC_K,    KC_X,   ____,    KC_UP,     ____,    KC_B,   KC_M,    KC_W,   KC_V,    KC_Z,    KC_RSFT  },
   { KC_LCTL,    KC_LGUI, KC_LALT, KC_ESC, MO(_FN), KC_SPC, KC_LEFT, KC_DOWN,   KC_RGHT, KC_SPC, MO(_FN), KC_ESC, KC_RALT, KC_RGUI, KC_RCTL  },
  },
 
@@ -54,18 +55,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
  * |        | \      | =      | [      | (      |        |        |        |        |        | )      | ]      | -      | /      |        |
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
- * | LSHIFT |        |        |        |        |        |        |        |        |        |        | RGB    | RGM    | RGB    | RSHIFT |
+ * |        |        |        |        |        |        |        |        |        |        |        |        |        |        |        |
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
- * |        |        |        |        | FN     |        |        |        |        |        | FN     | RGB    | RGB    | RGB    | RGB    |
+ * |        |        |        |        | FN     |        |        |        |        |        | FN     |        |        |        |        |
  * '--------------------------------------------------------------------------------------------------------------------------------------'
  */
 
  [_FN] = { /* FUNCTION */
-  { KC_F1,   KC_F2,   KC_F3,  KC_F4,   KC_F5,   KC_F6, _____, _____, _____, KC_F7, KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12  },
-  { RESET,   KC_1,    KC_2,   KC_3,    KC_4,    KC_5,  _____, _____, _____, KC_6,  KC_7,    KC_8,    KC_9,    KC_0,    _____   },
-  { _____,   KC_BSLS, KC_EQL, KC_LBRC, KC_LPRN, _____, _____, _____, _____, _____, KC_RPRN, KC_RBRC, KC_MINS, KC_SLSH, _____   },
-  { KC_LSFT, _____,   _____,  _____,   _____,   _____, _____, _____, _____, _____, _____,   RGB_HUD, RGB_HUI, RGB_MOD, KC_RSFT },
-  { _____,   _____,   _____,  _____,   MO(_FN), _____, _____, _____, _____, _____, MO(_FN), RGB_SAD, RGB_SAI, RGB_VAD, RGB_VAI },
+  { KC_F1,  KC_F2,   KC_F3,  KC_F4,   KC_F5,   KC_F6, _____, _____, _____, KC_F7, KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12 },
+  { RESET,  KC_1,    KC_2,   KC_3,    KC_4,    KC_5,  _____, _____, _____, KC_6,  KC_7,    KC_8,    KC_9,    KC_0,    _____  },
+  { _____,  KC_BSLS, KC_EQL, KC_LBRC, KC_LPRN, _____, _____, _____, _____, _____, KC_RPRN, KC_RBRC, KC_MINS, KC_SLSH, _____  },
+  { _____,  _____,   _____,  _____,   _____,   _____, _____, _____, _____, _____, _____,   _____,   _____,   _____,   _____  },
+  { _____,  _____,   _____,  _____,   MO(_FN), _____, _____, _____, _____, _____, MO(_FN), _____,   _____,   _____,   _____  },
  }
 };
 
