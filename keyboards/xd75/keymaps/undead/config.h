@@ -20,5 +20,6 @@
 #include "../../config.h"
 
 // place overrides here
+#define FORCE_NKRO
 
 #endif
