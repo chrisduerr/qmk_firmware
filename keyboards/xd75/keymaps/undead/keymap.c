@@ -27,7 +27,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* DVORAK
  * .--------------------------------------------------------------------------------------------------------------------------------------.
- * | PR SCR |        |        |        |        |        |        | PR UP  |        |        |        |        |        |        | DEL    |
+ * | PR SCR | 1      | 2      | 3      | 4      | 5      |        | PR UP  |        | 6      | 7      | 8      | 9      | 0      | DEL    |
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+-----------------|
  * | TAB    | '      | ,      | .      | P      | Y      |        | PG DWN |        | F      | G      | C      | R      | L      | `      |
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+-----------------+--------|
@@ -40,7 +40,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
  [_QW] = { /* DVORAK */
-  { KC_PSCREEN, ____,    ____,    ____,   ____,    ____,   ____,    KC_PGUP,   ____,    ____,   ____,    ____,   ____,    ____,    KC_DEL   },
+  { KC_PSCREEN, KC_1,    KC_2,    KC_3,   KC_4,    KC_5,   ____,    KC_PGUP,   ____,    KC_6,   KC_7,    KC_8,   KC_9,    KC_0,    KC_DEL   },
   { KC_TAB,     KC_QUOT, KC_COMM, KC_DOT, KC_P,    KC_Y,   ____,    KC_PGDOWN, ____,    KC_F,   KC_G,    KC_C,   KC_R,    KC_L,    KC_GRAVE },
   { KC_BSPC,    KC_A,    KC_O,    KC_E,   KC_U,    KC_I,   ____,    ____,      ____,    KC_D,   KC_H,    KC_T,   KC_N,    KC_S,    KC_ENT   },
   { KC_LSFT,    KC_SCLN, KC_Q,    KC_J,   KC_K,    KC_X,   ____,    KC_UP,     ____,    KC_B,   KC_M,    KC_W,   KC_V,    KC_Z,    KC_RSFT  },
