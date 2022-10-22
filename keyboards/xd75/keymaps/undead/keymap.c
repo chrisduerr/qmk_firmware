@@ -16,8 +16,8 @@
 #include "xd75.h"
 
 // Layer shorthand
-#define _QW 0
-#define _FN 1
+#define _QW 1
+#define _FN 2
 
 // NOOP
 #define ____ KC_NO
