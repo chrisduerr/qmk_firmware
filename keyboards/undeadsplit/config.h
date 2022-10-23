@@ -6,3 +6,5 @@
 #define USE_SERIAL
 #define SOFT_SERIAL_PIN D2
 #define SPLIT_WPM_ENABLE
+
+#define FORCE_NKRO
