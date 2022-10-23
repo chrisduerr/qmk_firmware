@@ -1,4 +1,14 @@
 #!/bin/bash
-sudo pacman -S avr-libc dfu-programmer make
-sudo make xd75:undead:dfu
-sudo pacman -Rsn avr-libc dfu-programmer make
+
+set -e
+
+sudo pacman -S --noconfirm --needed avr-libc dfu-programmer make qmk
+sudo pip install pyserial pillow
+
+# sudo make xd75:undead:dfu
+
+sudo qmk compile -kb undeadsplit -km default
+sudo qmk flash -kb undeadsplit -km default
+
+sudo pip uninstall pyserial pillow
+sudo pacman -Rsn --noconfirm avr-libc dfu-programmer make qmk
