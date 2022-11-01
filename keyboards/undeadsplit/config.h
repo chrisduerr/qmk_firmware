@@ -8,3 +8,9 @@
 #define SPLIT_WPM_ENABLE
 
 #define FORCE_NKRO
+
+#define ENCODERS_PAD_A { F5 }
+#define ENCODERS_PAD_B { F4 }
+#define ENCODERS_PAD_A_RIGHT { F4 }
+#define ENCODERS_PAD_B_RIGHT { F5 }
+#define ENCODER_RESOLUTION 4
