@@ -46,6 +46,9 @@ uint8_t logo_y = 15;
 // Typing animation toggle flag.
 bool flame_big = false;
 
+// Last oled update.
+uint32_t last_update = 0;
+
 /// Check if a new key was pressed.
 static bool new_key_down(void) {
     bool new_key_down = false;
@@ -139,12 +142,36 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     return OLED_ROTATION_270;
 }
 
+/// Check if display should be turned off
+bool should_timeout(uint8_t wpm) {
+    // Use master side to control timeouts using `SPLIT_OLED_ENABLE`.
+    if (!is_keyboard_master()) {
+        return false;
+    }
+
+    uint32_t now = timer_read();
+
+    // Reset timer while typing.
+    if (wpm != 0) {
+        last_update = now;
+    }
+
+    // Timeout when typing was suspended for at least `OLED_TIMEOUT`.
+    return wpm == 0 && now - last_update >= OLED_TIMEOUT;
+}
+
 /// Main entry point for OLED control.
 bool oled_task_user(void) {
     uint8_t wpm = get_current_wpm();
 
+    if (should_timeout(wpm)) {
+        oled_off();
+        return false;
+    }
+
     render_logo(wpm);
 
+    // Render text once animation is done.
     if (logo_y == 0) {
         render_text(wpm);
     }
