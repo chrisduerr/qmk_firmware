@@ -63,7 +63,7 @@ static bool new_key_down(void) {
 }
 
 /// Render our logo.
-static void render_logo(uint8_t wpm) {
+static void render_logo(uint8_t wpm, bool new_key) {
     // Default Alacritty logo.
     static const char PROGMEM alacritty_logo[] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xe0, 0xe0,
@@ -111,7 +111,7 @@ static void render_logo(uint8_t wpm) {
         flame_big = false;
     } else {
         // Toggle between big and small flame with every key press.
-        if (new_key_down()) {
+        if (new_key) {
             flame_big = !flame_big;
         }
 
@@ -143,7 +143,7 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 /// Check if display should be turned off
-bool should_timeout(uint8_t wpm) {
+bool should_timeout(uint8_t wpm, bool new_key) {
     // Use master side to control timeouts using `SPLIT_OLED_ENABLE`.
     if (!is_keyboard_master()) {
         return false;
@@ -152,7 +152,7 @@ bool should_timeout(uint8_t wpm) {
     uint32_t now = timer_read();
 
     // Reset timer while typing.
-    if (wpm != 0) {
+    if (new_key || wpm != 0) {
         last_update = now;
     }
 
@@ -163,13 +163,14 @@ bool should_timeout(uint8_t wpm) {
 /// Main entry point for OLED control.
 bool oled_task_user(void) {
     uint8_t wpm = get_current_wpm();
+    bool new_key = new_key_down();
 
-    if (should_timeout(wpm)) {
+    if (should_timeout(wpm, new_key)) {
         oled_off();
         return false;
     }
 
-    render_logo(wpm);
+    render_logo(wpm, new_key);
 
     // Render text once animation is done.
     if (logo_y == 0) {
