@@ -6,12 +6,12 @@
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /* BASE LAYER */
     [0] = LAYOUT(
-        KC_PSCREEN, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_DEL,
-        KC_TAB,     KC_QUOT, KC_COMM, KC_DOT,  KC_P,    KC_Y,     KC_F,    KC_G,    KC_C,    KC_R,    KC_L,    KC_GRAVE,
-        KC_BSPC,    KC_A,    KC_O,    KC_E,    KC_U,    KC_I,     KC_D,    KC_H,    KC_T,    KC_N,    KC_S,    KC_ENT,
-        KC_LSFT,    KC_SCLN, KC_Q,    KC_J,    KC_K,    KC_X,     KC_B,    KC_M,    KC_W,    KC_V,    KC_Z,    KC_RSFT,
-        KC_LCTL,    KC_LGUI, KC_LALT, KC_ESC,  MO(1),   KC_SPC,   KC_SPC,  MO(1),   KC_ESC,  KC_RALT, KC_RGUI, KC_RCTRL,
-        KC_NO,      KC_NO,   KC_NO,   KC_NO,   KC_NO,   RESET,    RESET,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO
+        KC_PSCR, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_DEL,
+        KC_TAB,  KC_QUOT, KC_COMM, KC_DOT,  KC_P,    KC_Y,     KC_F,    KC_G,    KC_C,    KC_R,    KC_L,    KC_GRAVE,
+        KC_BSPC, KC_A,    KC_O,    KC_E,    KC_U,    KC_I,     KC_D,    KC_H,    KC_T,    KC_N,    KC_S,    KC_ENT,
+        KC_LSFT, KC_SCLN, KC_Q,    KC_J,    KC_K,    KC_X,     KC_B,    KC_M,    KC_W,    KC_V,    KC_Z,    KC_RSFT,
+        KC_LCTL, KC_LGUI, KC_LALT, KC_ESC,  MO(1),   KC_SPC,   KC_SPC,  MO(1),   KC_ESC,  KC_RALT, KC_RGUI, KC_RCTL,
+        KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   QK_BOOT,  TG(2),   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO
     ),
     /* FN LAYER */
     [1] = LAYOUT(
@@ -21,6 +21,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         ____,       ____,    ____,    KC_DOWN, KC_UP,   ____,     ____,    ____,    ____,    ____,    ____,    ____,
         ____,       ____,    ____,    ____,    ____,    ____,     ____,    ____,    ____,    ____,    ____,    ____,
         ____,       ____,    ____,    ____,    ____,    ____,     ____,    ____,    ____,    ____,    ____,    ____
+    ),
+    /* WASD LAYER */
+    [2] = LAYOUT(
+        KC_PSCR, KC_1,  KC_2,    KC_3,   KC_4,  KC_5,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        KC_TAB,  KC_T,  KC_Q,    KC_W,   KC_E,  KC_R,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        KC_BSPC, KC_G,  KC_A,    KC_S,   KC_D,  KC_F,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        KC_LSFT, KC_B,  KC_Z,    KC_X,   KC_C,  KC_V,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        KC_LCTL, KC_NO, KC_LALT, KC_ESC, KC_NO, KC_SPC,    KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+        KC_NO,   KC_O,  KC_NO,   KC_NO,  KC_NO, QK_REBOOT, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO
     )
 };
 
@@ -31,6 +40,8 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
     [0] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN), ENCODER_CCW_CW(KC_MS_WH_DOWN, KC_MS_WH_UP) },
     /* FN LAYER */
     [1] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN), ENCODER_CCW_CW(KC_MS_WH_DOWN, KC_MS_WH_UP) },
+    /* WASD LAYER */
+    [2] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN), ENCODER_CCW_CW(KC_MS_WH_DOWN, KC_MS_WH_UP) },
 };
 
 #endif
