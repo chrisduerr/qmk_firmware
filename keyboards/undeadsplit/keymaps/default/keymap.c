@@ -1,5 +1,9 @@
 #include QMK_KEYBOARD_H
 
+#include "transactions.h"
+#include "analog.h"
+#include "print.h"
+
 // Fallthrough.
 #define ____ KC_TRNS
 
@@ -10,8 +14,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_QUOT, KC_COMM, KC_DOT,  KC_P,    KC_Y,     KC_F,    KC_G,    KC_C,    KC_R,    KC_L,    KC_GRAVE,
         KC_BSPC, KC_A,    KC_O,    KC_E,    KC_U,    KC_I,     KC_D,    KC_H,    KC_T,    KC_N,    KC_S,    KC_ENT,
         KC_LSFT, KC_SCLN, KC_Q,    KC_J,    KC_K,    KC_X,     KC_B,    KC_M,    KC_W,    KC_V,    KC_Z,    KC_RSFT,
-        KC_LCTL, KC_LGUI, KC_LALT, KC_ESC,  MO(1),   KC_SPC,   KC_SPC,  MO(1),   KC_ESC,  KC_RALT, KC_RGUI, KC_RCTL,
-        KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   QK_BOOT,  TG(2),   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO
+        KC_LCTL, KC_LGUI, KC_LALT, KC_ESC,  MO(1),   KC_SPC,   KC_SPC,  MO(1),   KC_ESC,  KC_RALT, KC_RGUI, KC_RCTL
     ),
     /* FN LAYER */
     [1] = LAYOUT(
@@ -19,7 +22,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_COPY,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    ____,
         KC_PASTE,   KC_BSLS, KC_EQL,  KC_LBRC, KC_LPRN, KC_RIGHT, KC_LEFT, KC_RPRN, KC_RBRC, KC_MINS, KC_SLSH, ____,
         ____,       ____,    ____,    KC_DOWN, KC_UP,   ____,     ____,    ____,    ____,    ____,    ____,    ____,
-        ____,       ____,    ____,    ____,    ____,    ____,     ____,    ____,    ____,    ____,    ____,    ____,
         ____,       ____,    ____,    ____,    ____,    ____,     ____,    ____,    ____,    ____,    ____,    ____
     ),
     /* WASD LAYER */
@@ -28,169 +30,221 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_T,  KC_Q,    KC_W,   KC_E,  KC_R,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
         KC_BSPC, KC_G,  KC_A,    KC_S,   KC_D,  KC_F,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
         KC_LSFT, KC_B,  KC_Z,    KC_X,   KC_C,  KC_V,      KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-        KC_LCTL, KC_NO, KC_LALT, KC_ESC, KC_NO, KC_SPC,    KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-        KC_NO,   KC_O,  KC_NO,   KC_NO,  KC_NO, QK_REBOOT, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO
+        KC_LCTL, KC_NO, KC_LALT, KC_ESC, KC_NO, KC_SPC,    KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO
     )
 };
 
-#if defined(ENCODER_MAP_ENABLE)
+#if defined(SPLIT_TRANSACTION_IDS_USER)
 
-const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
-    /* BASE LAYER */
-    [0] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN), ENCODER_CCW_CW(KC_MS_WH_DOWN, KC_MS_WH_UP) },
-    /* FN LAYER */
-    [1] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN), ENCODER_CCW_CW(KC_MS_WH_DOWN, KC_MS_WH_UP) },
-    /* WASD LAYER */
-    [2] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN), ENCODER_CCW_CW(KC_MS_WH_DOWN, KC_MS_WH_UP) },
-};
+#define MAX_SCROLL_INTERVAL_MS_MASTER 50
+#define MIN_SCROLL_INTERVAL_MS_MASTER 5
+#define MAX_SCROLL_INTERVAL_MS_SLAVE 200
+#define MIN_SCROLL_INTERVAL_MS_SLAVE 20
 
-#endif
+#define PIN_ANALOG_BUTTON B7
+#define PIN_ANALOG_X B5
+#define PIN_ANALOG_Y B6
 
-#ifdef OLED_ENABLE
+#define DEADZONE 100
 
-// Keys pressed during the last frame.
-bool pressed_keys[MATRIX_ROWS][MATRIX_COLS];
+typedef struct _analog_bounds {
+    int16_t min_y;
+    int16_t rst_y;
+    int16_t max_y;
+} analog_bounds;
 
-// Initial Logo Y position for startup animation.
-uint8_t logo_y = 15;
+typedef struct _analog_stick_pins {
+    int16_t x;
+    int16_t y;
+} analog_stick_pins;
 
-// Typing animation toggle flag.
-bool flame_big = false;
+// Initailize limits for calibration.
+//
+// These values are initialized slightly closer to `rst_y` than any observed
+// values. This way the first scroll is only slightly inaccurate, while still
+// having access to the full range of motion.
+static analog_bounds analog_bounds_master = { 300, 0, 700 };
+static analog_bounds analog_bounds_slave = { 300, 0, 700 };
 
-// Last oled update.
-uint32_t last_update = 0;
+static uint16_t last_scroll = 0;
 
-/// Check if a new key was pressed.
-static bool new_key_down(void) {
-    bool new_key_down = false;
-    for (uint8_t x = 0; x < MATRIX_ROWS; x++) {
-        for (uint8_t y = 0; y < MATRIX_COLS; y++) {
-            bool key_pressed = (matrix_get_row(x) & (1 << y)) > 0;
-            new_key_down |= pressed_keys[x][y] != key_pressed;
-            pressed_keys[x][y] = key_pressed;
+static bool is_master = false;
+
+// Read analog stick pin values from slave.
+analog_stick_pins stick_pins_slave(void) {
+    // Read pins from slave through RPC.
+    analog_stick_pins pins = { 0, 0 };
+    bool success = transaction_rpc_recv(KEYBOARD_SYNC_A, sizeof(pins), &pins);
+
+    // Report as zero position on failure.
+    if (!success) {
+        analog_stick_pins fallback_pins = { 0, analog_bounds_slave.rst_y };
+        return fallback_pins;
+    }
+
+    // Ensure slave analog stick deadpoint is initialized.
+    if (analog_bounds_slave.rst_y == 0) {
+        analog_bounds_slave.rst_y = pins.y;
+    }
+
+    // Update limits on success.
+    if (success && pins.y != 0) {
+        if (pins.y > analog_bounds_slave.max_y) {
+            analog_bounds_slave.max_y = pins.y;
+        } else if (pins.y < analog_bounds_slave.min_y) {
+            analog_bounds_slave.min_y = pins.y;
         }
     }
-    return new_key_down;
+
+    return pins;
 }
 
-/// Render our logo.
-static void render_logo(uint8_t wpm, bool new_key) {
-    // Default Alacritty logo.
-    static const char PROGMEM alacritty_logo[] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xe0, 0xe0,
-        0xe0, 0xe0, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xe0, 0xfc, 0xff, 0xff, 0x7f, 0x1f,
-        0x1f, 0x7f, 0xff, 0xff, 0xfc, 0xe0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xf0, 0xfc, 0xff, 0xff, 0x7f, 0x0f, 0x83, 0xe0, 0xfc,
-        0xfc, 0xe0, 0x83, 0x0f, 0x7f, 0xff, 0xff, 0xfc, 0xf0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0xc0, 0xf0, 0xfe, 0xff, 0xff, 0x3f, 0x07, 0x01, 0x00, 0x00, 0x07, 0x3f, 0xff,
-        0xff, 0x3f, 0x07, 0x00, 0x00, 0x01, 0x0f, 0x3f, 0xff, 0xff, 0xfe, 0xf0, 0xc0, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
-        0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00,
-        // Write extra zeroes to clear the screen during startup animation.
-        // This is necessary because `oled_clear` introduces tearing.
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+// Read analog stick pin values from slave.
+analog_stick_pins stick_pins_master(void) {
+    // Read master analog stick pins.
+    analog_stick_pins pins = { analogReadPin(PIN_ANALOG_X), analogReadPin(PIN_ANALOG_Y) };
 
-    // Animation frame for Alacritty logo while typing.
-    static const char PROGMEM alacritty_logo_flame_big[] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xe0, 0xe0,
-        0xe0, 0xe0, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xe0, 0xfc, 0xff, 0xff, 0x7f, 0x1f,
-        0x1f, 0x7f, 0xff, 0xff, 0xfc, 0xe0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xf0, 0xfc, 0xff, 0xff, 0x7f, 0x0f, 0x83, 0xe0, 0xfc,
-        0xfc, 0xe0, 0x83, 0x0f, 0x7f, 0xff, 0xff, 0xfc, 0xf0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0xc0, 0xf0, 0xfe, 0xff, 0xff, 0x3f, 0x07, 0x01, 0x00, 0x00, 0x0f, 0xff, 0xff,
-        0xff, 0xff, 0x0f, 0x00, 0x00, 0x01, 0x0f, 0x3f, 0xff, 0xff, 0xfe, 0xf0, 0xc0, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f,
-        0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00,
-    };
+    // Update limits.
+    if (pins.y > analog_bounds_master.max_y) {
+        analog_bounds_master.max_y = pins.y;
+    } else if (pins.y < analog_bounds_master.min_y) {
+        analog_bounds_master.min_y = pins.y;
+    }
 
-    oled_set_cursor(0, logo_y);
+    return pins;
+}
 
-    // Draw Alacritty logo according to current status.
-    if (wpm == 0) {
-        // Reset animation when WPM hits zero.
-        oled_write_raw_P(alacritty_logo, sizeof(alacritty_logo));
-        flame_big = false;
+// Get analog stick Y position as inclusive range from -100 to 100.
+int8_t analog_percentage(bool master) {
+    // Initialize pins and variables.
+    analog_stick_pins pins;
+    analog_bounds bounds;
+    if (master) {
+        bounds = analog_bounds_master;
+        pins = stick_pins_master();
     } else {
-        // Toggle between big and small flame with every key press.
-        if (new_key) {
-            flame_big = !flame_big;
-        }
+        bounds = analog_bounds_slave;
+        pins = stick_pins_slave();
+    }
 
-        if (flame_big) {
-            oled_write_raw_P(alacritty_logo_flame_big, sizeof(alacritty_logo_flame_big));
+    if (pins.y < bounds.rst_y - DEADZONE) {
+        // Get distance from deadzone.
+        int16_t delta = bounds.rst_y - DEADZONE - pins.y;
+
+        // Convert distance to percentage.
+        int16_t max_delta = bounds.rst_y - DEADZONE - bounds.min_y;
+        int16_t percentage = delta * 100 / max_delta;
+
+        return -1 * (int8_t)percentage;
+    } else if (pins.y > bounds.rst_y + DEADZONE) {
+        // Get distance from deadzone.
+        int16_t delta = pins.y - bounds.rst_y - DEADZONE;
+
+        // Convert distance to percentage.
+        int16_t max_delta = bounds.max_y - bounds.rst_y - DEADZONE;
+        int16_t percentage = delta * 100 / max_delta;
+
+        return (int8_t)percentage;
+    } else {
+        return 0;
+    }
+}
+
+// Get timer interval from analog stick percentage.
+uint16_t analog_interval(int8_t percentage, uint16_t min, uint16_t max) {
+    // Always treat percentage as positive number.
+    if (percentage < 0) {
+        percentage *= -1;
+    }
+
+    // Calculate offset from minimum interval.
+    uint32_t timer_range = (uint32_t)(max - min);
+    uint32_t offset = (uint32_t)percentage * timer_range / 100;
+
+    // Calculate interval
+    return max - (uint16_t)offset;
+}
+
+void housekeeping_task_user(void) {
+    // Enter bootloader on joystick press.
+    if (!readPin(PIN_ANALOG_BUTTON)) {
+        bootloader_jump();
+    }
+
+    // Skip analog check for slave or when analog trigger is not yet possible.
+    static uint32_t min_interval = (MIN_SCROLL_INTERVAL_MS_MASTER * MIN_SCROLL_INTERVAL_MS_SLAVE)
+        / (MIN_SCROLL_INTERVAL_MS_MASTER + MIN_SCROLL_INTERVAL_MS_SLAVE);
+    uint16_t elapsed = timer_elapsed(last_scroll);
+    if (!is_master || elapsed < (uint16_t)min_interval) {
+        return;
+    }
+
+    // Get analog stick positions.
+    int8_t percentage_master = analog_percentage(true);
+    int8_t percentage_slave = analog_percentage(false);
+
+    // Ignore analog sticks if neither is moved.
+    if (percentage_master == 0 && percentage_slave == 0) {
+        return;
+    }
+
+    // Ignore analog sticks if they oppose each other.
+    if ((percentage_master > 0 && percentage_slave < 0)
+        || (percentage_master < 0 && percentage_slave > 0))
+    {
+        return;
+    }
+
+    // Convert analog stick percentage to event emission interval.
+    uint32_t interval_master = (uint32_t)analog_interval(
+            percentage_master,
+            MIN_SCROLL_INTERVAL_MS_MASTER,
+            MAX_SCROLL_INTERVAL_MS_MASTER
+    );
+    uint32_t interval_slave = (uint32_t)analog_interval(
+            percentage_slave,
+            MIN_SCROLL_INTERVAL_MS_SLAVE,
+            MAX_SCROLL_INTERVAL_MS_SLAVE
+    );
+
+    // Calculate combined interval frequency.
+    uint32_t interval = (interval_master * interval_slave) / (interval_master + interval_slave);
+
+    // Send buttons if interval duration has elapsed.
+    if (elapsed >= interval) {
+        last_scroll = timer_read();
+
+        if (percentage_master > 0 || percentage_slave > 0) {
+            register_code(KC_UP);
+            unregister_code(KC_UP);
         } else {
-            oled_write_raw_P(alacritty_logo, sizeof(alacritty_logo));
+            register_code(KC_DOWN);
+            unregister_code(KC_DOWN);
         }
     }
-
-    // Update startup animation.
-    if (logo_y > 0) {
-        logo_y -= 1;
-    }
 }
 
-/// Draw text information.
-static void render_text(uint8_t wpm) {
-    oled_set_cursor(0, 14);
-    oled_write_ln_P(PSTR(" WPM "), false);
-
-    oled_set_cursor(1, 15);
-    oled_write(get_u8_str(wpm, '0'), false);
+// Send analog stick pin value.
+void analog_sync_handler(uint8_t in_buflen, const void* in_data, uint8_t out_buflen, void* out_data) {
+    analog_stick_pins *pins = (analog_stick_pins*)out_data;
+    pins->x = analogReadPin(PIN_ANALOG_X);
+    pins->y = analogReadPin(PIN_ANALOG_Y);
 }
 
-/// One-time OLED setup.
-oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    return OLED_ROTATION_270;
-}
+void keyboard_post_init_user(void) {
+    is_master = is_keyboard_master();
 
-/// Check if display should be turned off
-bool should_timeout(uint8_t wpm, bool new_key) {
-    // Use master side to control timeouts using `SPLIT_OLED_ENABLE`.
-    if (!is_keyboard_master()) {
-        return false;
+    // Initialize analog stick button.
+    setPinInputHigh(PIN_ANALOG_BUTTON);
+
+    // Initialize master analog stick deadpoint.
+    if (is_master && analog_bounds_master.rst_y == 0) {
+        analog_stick_pins pins_master = stick_pins_master();
+        analog_bounds_master.rst_y = pins_master.y;
     }
 
-    uint32_t now = timer_read();
-
-    // Reset timer while typing.
-    if (new_key || wpm != 0) {
-        last_update = now;
-    }
-
-    // Timeout when typing was suspended for at least `OLED_TIMEOUT`.
-    return wpm == 0 && now - last_update >= OLED_TIMEOUT;
-}
-
-/// Main entry point for OLED control.
-bool oled_task_user(void) {
-    uint8_t wpm = get_current_wpm();
-    bool new_key = new_key_down();
-
-    if (should_timeout(wpm, new_key)) {
-        oled_off();
-        return false;
-    }
-
-    render_logo(wpm, new_key);
-
-    // Render text once animation is done.
-    if (logo_y == 0) {
-        render_text(wpm);
-    }
-
-    oled_render();
-
-    return false;
+    // Setup slave/master communication handlers.
+    transaction_register_rpc(KEYBOARD_SYNC_A, analog_sync_handler);
 }
 
 #endif
