@@ -45,7 +45,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #define PIN_ANALOG_X B5
 #define PIN_ANALOG_Y B6
 
-#define DEADZONE 100
+#define OUTER_DEADZONE 50
+#define DEADZONE 50
 
 typedef struct _analog_bounds {
     int16_t min_y;
@@ -120,11 +121,11 @@ int8_t analog_percentage(bool master) {
     analog_stick_pins pins;
     analog_bounds bounds;
     if (master) {
-        bounds = analog_bounds_master;
         pins = stick_pins_master();
+        bounds = analog_bounds_master;
     } else {
-        bounds = analog_bounds_slave;
         pins = stick_pins_slave();
+        bounds = analog_bounds_slave;
     }
 
     if (pins.y < bounds.rst_y - DEADZONE) {
@@ -132,7 +133,8 @@ int8_t analog_percentage(bool master) {
         int16_t delta = bounds.rst_y - DEADZONE - pins.y;
 
         // Convert distance to percentage.
-        int16_t max_delta = bounds.rst_y - DEADZONE - bounds.min_y;
+        int16_t max_delta = bounds.rst_y - DEADZONE - OUTER_DEADZONE - bounds.min_y;
+        delta = delta > max_delta ? max_delta : delta;
         int16_t percentage = delta * 100 / max_delta;
 
         return -1 * (int8_t)percentage;
@@ -141,7 +143,8 @@ int8_t analog_percentage(bool master) {
         int16_t delta = pins.y - bounds.rst_y - DEADZONE;
 
         // Convert distance to percentage.
-        int16_t max_delta = bounds.max_y - bounds.rst_y - DEADZONE;
+        int16_t max_delta = bounds.max_y - bounds.rst_y - DEADZONE - OUTER_DEADZONE;
+        delta = delta > max_delta ? max_delta : delta;
         int16_t percentage = delta * 100 / max_delta;
 
         return (int8_t)percentage;
