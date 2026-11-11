@@ -46,7 +46,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #define PIN_ANALOG_Y B6
 
 #define OUTER_DEADZONE 50
-#define DEADZONE 50
+#define DEADZONE 75
 
 typedef struct _analog_bounds {
     int16_t min_y;
@@ -170,7 +170,7 @@ uint16_t analog_interval(int8_t percentage, uint16_t min, uint16_t max) {
 
 void housekeeping_task_user(void) {
     // Enter bootloader on joystick press.
-    if (!readPin(PIN_ANALOG_BUTTON)) {
+    if (!gpio_read_pin(PIN_ANALOG_BUTTON)) {
         bootloader_jump();
     }
 
@@ -238,7 +238,7 @@ void keyboard_post_init_user(void) {
     is_master = is_keyboard_master();
 
     // Initialize analog stick button.
-    setPinInputHigh(PIN_ANALOG_BUTTON);
+    gpio_set_pin_input_high(PIN_ANALOG_BUTTON);
 
     // Initialize master analog stick deadpoint.
     if (is_master && analog_bounds_master.rst_y == 0) {
